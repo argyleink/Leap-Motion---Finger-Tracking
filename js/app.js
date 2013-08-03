@@ -1,26 +1,36 @@
 var app = function() {
 
 	var controller 	= new Leap.Controller({enableGestures: true})
-	  , debug 		= true // toggle console logging
+	  , debug 		= false // toggle console logging
 	  , xoffset 	= window.innerWidth / 4
-	  , thumb 		= {}
-	  , latestFrame
-	  , crosshair;
+	  , crosshair 	= {}
+	  , thumb 		= { x: 0 }
+	  , latestFrame;
 
 	function moveCrosshair(x,y) {
-		crosshair.style.left = x + 'px';
-		crosshair.style.bottom = y + 'px';
+		crosshair.el.style.left 	= crosshair.x = x + 'px';
+		crosshair.el.style.bottom 	= crosshair.y = y + 'px';
+	}
+
+	function shoot() {
+		console.log('BANG!' + crosshair.x);
 	}
 
 	function accountForScreenXOffset(x) {
-		return (x * 5) + xoffset;
+		return Math.floor( (x * 5) + xoffset );
 	}
 
 	function accountForScreenYOffset(y) {
-		return y * 2;
+		return Math.floor( y * 2 );
 	}
 
 	function watchThumbMotion(thumbPos) {
+		var distance = Math.abs(thumb.x - thumbPos[0]);
+		
+		if (distance > 40)
+			app.shoot()
+
+		thumb.x = thumbPos[0];
 		debug && console.info(thumbPos[0]);
 	}
 	
@@ -60,13 +70,14 @@ var app = function() {
 
 	//////////////// DEVICE EVENTS
 	controller.on('ready', function() {
-		crosshair = document.getElementById('crosshair');
+		crosshair.el = document.getElementById('crosshair');
 
 		debug && console.log("ready");
 	});
 
 	return {
 		moveCrosshair: 				moveCrosshair,
+		shoot: 						_.throttle(shoot, 300),
 		watchThumbMotion: 			watchThumbMotion,
 		accountForScreenXOffset: 	accountForScreenXOffset,
 		accountForScreenYOffset: 	accountForScreenYOffset
