@@ -1,10 +1,11 @@
 var app = function() {
 
-	var controller = new Leap.Controller({enableGestures: true})
-		, xoffset = window.innerWidth / 4
-		//, yoffset = window.innerHeight / 2
-		, latestFrame
-		, crosshair;
+	var controller 	= new Leap.Controller({enableGestures: true})
+	  , debug 		= true // toggle console logging
+	  , xoffset 	= window.innerWidth / 4
+	  , thumb 		= {}
+	  , latestFrame
+	  , crosshair;
 
 	function moveCrosshair(x,y) {
 		crosshair.style.left = x + 'px';
@@ -18,11 +19,15 @@ var app = function() {
 	function accountForScreenYOffset(y) {
 		return y * 2;
 	}
+
+	function watchThumbMotion(thumbPos) {
+		debug && console.info(thumbPos[0]);
+	}
 	
 
 	////////////////  GESTURE EVENTS
 	controller.gesture('keyTap', function(data) {
-		console.log('tappy');
+		debug && console.log('tappy');
 	});
 
 	controller.gesture('screenTap', function(data) {
@@ -30,31 +35,39 @@ var app = function() {
 			y = app.accountForScreenYOffset(data.gestures[0].position[1]);
 		
 		app.moveCrosshair(x,y);
-		console.log('poke');
+
+		debug && console.log('poke');
 	});
 
 
 	////////////////  PRIMARY LOOP - ALREADY RAF
 	controller.loop(function(frame) {
-		latestFrame = frame;
+		var fingers 	= frame.pointables,
+			latestFrame = frame;
 
-		if (!frame.pointables || !frame.pointables[0] || frame.pointables[0] === 'undefined') return;
+		if (_.isEmpty(fingers)) return;
 
-		var x = app.accountForScreenXOffset(frame.pointables[0].tipPosition[0]),
-			y = app.accountForScreenYOffset(frame.pointables[0].tipPosition[1]);
-	
-		app.moveCrosshair(x,y);
+		app.moveCrosshair(
+			app.accountForScreenXOffset(fingers[0].tipPosition[0]),
+			app.accountForScreenYOffset(fingers[0].tipPosition[1])
+		);
+
+		if (fingers[1] && fingers[1].tipPosition) {
+			app.watchThumbMotion(fingers[1].tipPosition);
+		}
 	});
 
 
 	//////////////// DEVICE EVENTS
 	controller.on('ready', function() {
 		crosshair = document.getElementById('crosshair');
-		console.log("ready");
+
+		debug && console.log("ready");
 	});
 
 	return {
 		moveCrosshair: 				moveCrosshair,
+		watchThumbMotion: 			watchThumbMotion,
 		accountForScreenXOffset: 	accountForScreenXOffset,
 		accountForScreenYOffset: 	accountForScreenYOffset
 	};
