@@ -1,5 +1,5 @@
 body {
-  background-color: #f5f5f5;
+  background-color: #ddd;
 }
 .crosshair {
   background: url("../assets/crosshair.svg") no-repeat center center;
@@ -9,6 +9,16 @@ body {
   position: absolute;
   left: 50%;
   bottom: 50%;
+  z-index: 1000;
+}
+.enemy {
+  position: absolute;
+  background-color: #f00;
+  width: 100px;
+  height: 100px;
+  position: absolute;
+  left: 50%;
+  bottom: 70%;
   z-index: 1000;
 }
 

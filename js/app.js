@@ -1,4 +1,5 @@
 var app = function() {
+	'use strict';
 
 	var controller 	= new Leap.Controller({enableGestures: true})
 	  , debug 		= false // toggle console logging
@@ -8,21 +9,32 @@ var app = function() {
 	  , latestFrame;
 
 	function moveCrosshair(x,y) {
-		crosshair.el.style.left 	= crosshair.x = x + 'px';
-		crosshair.el.style.bottom 	= crosshair.y = y + 'px';
+		crosshair.el.style.left 	= x + 'px';
+		crosshair.el.style.bottom   = y + 'px';
+		crosshair.x = crosshair.el.offsetLeft;
+		crosshair.y = crosshair.el.offsetTop;
 	}
 
 	function shoot() {
-		console.log('BANG!' + crosshair.x);
+		_flashScreen();
+		var potentialEnemy = document.elementFromPoint(crosshair.x, crosshair.y);
+
+		if (potentialEnemy && potentialEnemy.classList.contains('enemy'))
+			potentialEnemy.click();
+
+		debug && console.log('BANG! ' + crosshair.x);
 	}
 
-	function accountForScreenXOffset(x) {
-		return Math.floor( (x * 5) + xoffset );
+	function _flashScreen() {
+		document.body.style.backgroundColor = 'white';
+
+		_.delay(function() {
+			document.body.style.backgroundColor = '#ddd';
+		}, 10);
 	}
 
-	function accountForScreenYOffset(y) {
-		return Math.floor( y * 2 );
-	}
+	function accountForScreenXOffset(x) { return Math.floor( (x * 5) + xoffset ); }
+	function accountForScreenYOffset(y) { return Math.floor( y * 2 ); }
 
 	function watchThumbMotion(thumbPos) {
 		var distance = Math.abs(thumb.x - thumbPos[0]);
@@ -30,7 +42,9 @@ var app = function() {
 		if (distance > 40)
 			app.shoot()
 
+		// stash new x
 		thumb.x = thumbPos[0];
+
 		debug && console.info(thumbPos[0]);
 	}
 	
@@ -41,10 +55,10 @@ var app = function() {
 	});
 
 	controller.gesture('screenTap', function(data) {
-		var x = app.accountForScreenXOffset(data.gestures[0].position[0]),
-			y = app.accountForScreenYOffset(data.gestures[0].position[1]);
-		
-		app.moveCrosshair(x,y);
+		app.moveCrosshair(
+			app.accountForScreenXOffset(data.gestures[0].position[0]),
+			app.accountForScreenYOffset(data.gestures[0].position[1])
+		);
 
 		debug && console.log('poke');
 	});
@@ -75,9 +89,11 @@ var app = function() {
 		debug && console.log("ready");
 	});
 
+
+	//////////////// EXPOSED METHODS
 	return {
 		moveCrosshair: 				moveCrosshair,
-		shoot: 						_.throttle(shoot, 300),
+		shoot: 						_.throttle(shoot, 500),
 		watchThumbMotion: 			watchThumbMotion,
 		accountForScreenXOffset: 	accountForScreenXOffset,
 		accountForScreenYOffset: 	accountForScreenYOffset
